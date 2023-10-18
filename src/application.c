@@ -1,21 +1,8 @@
-#include <SDL2/SDL.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <time.h>
 
+
+#include "defs.h"
 #include "colors.h"
-
-
-#define SCREEN_WIDTH 1280
-#define SCREEN_HEIGTH 720
-
-
-//structs
-typedef struct App {
-    SDL_Window *window;
-    SDL_Renderer *renderer;
-    SDL_Surface *surface;
-} App;
+#include "image_helper.h"
 
 
 void do_input(void);
@@ -39,6 +26,7 @@ int main(void) {
         printf("SDL init error");
         return 1;
     }
+
     struct App app;
     app.window = SDL_CreateWindow("test", 0, 0, SCREEN_WIDTH, SCREEN_HEIGTH, 0);
     app.renderer = SDL_CreateRenderer(app.window, -1, SDL_RENDERER_ACCELERATED);
@@ -79,30 +67,17 @@ void do_input(void)
 
 
 void render(App app) {
-
-    //reset_screen(app, WHITE);
-    set_draw_color(app, WHITE, 255);
-    SDL_RenderClear(app.renderer);
-    set_draw_color(app, BLUE, 255);
-    struct SDL_Rect rect;
-    rect.x = pos;
-    rect.y = 0;
-    rect.w = 300;
-    rect.h = SCREEN_HEIGTH;
-    SDL_RenderFillRect(app.renderer, &rect);
+    reset_screen(app, WHITE);
+    //test
+    SDL_Surface *text = load_texture_surface(PLAYER_TEXTURE);
+    apply_texture_surface(app, text, pos, SCREEN_HEIGTH / 2);
     pos++;
     SDL_RenderPresent(app.renderer);
 }
 
 
 void reset_screen(App app, Color color) {
-    set_draw_color(app, WHITE, 255);
-    for (int i = 0; i < SCREEN_WIDTH; i++) {
-        for (int j = 0; j < SCREEN_HEIGTH; j++) {
-            SDL_RenderDrawPoint(app.renderer, i, j);
-        } 
-    }
-    //SDL_RenderDrawRect(app.renderer, NULL);
+    SDL_RenderDrawRect(app.renderer, NULL);
 }
 
 
