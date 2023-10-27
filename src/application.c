@@ -16,7 +16,18 @@ typedef struct Player {
 } Player;
 
 
-void do_input(void);
+//checks wether a key is currently held down
+typedef struct Keys {
+    bool a_key;
+    bool d_key;
+    bool s_key;
+    bool w_key;
+} Keys;
+
+
+void check_input(void);
+void handle_key_event(SDL_KeyboardEvent event, bool press);
+void handle_movement(void);
 void init_player(void);
 void render(App app);
 void reset_screen(App app, Color color);
@@ -24,8 +35,8 @@ void set_draw_color(App app, Color color, int opacity);
 
 
 bool shouldClose;
-int pos;
 Player player;
+Keys keys;
 
 
 int main(void) {
@@ -46,17 +57,22 @@ int main(void) {
     app.renderer = SDL_CreateRenderer(app.window, -1, SDL_RENDERER_ACCELERATED);
     app.surface = SDL_GetWindowSurface(app.window);
 
-    pos = 0;
     //start = clock();
     SDL_UnlockSurface(app.surface);
 
     printf("bar\n");
 
+    //initialize all keys as not pressed
+    Keys k = {false, false, false, false};
+    keys = k;
+
+
     //initialize the player with default values
     init_player();
 
     while(!shouldClose) {
-        do_input();
+        check_input();
+        handle_movement();
         render(app);
         SDL_Delay(8);
     }
@@ -69,22 +85,67 @@ int main(void) {
 }
 
 
-void do_input(void)
+void check_input(void)
 {
 	SDL_Event event;
 
 	while (SDL_PollEvent(&event))
 	{
-		switch (event.type)
-		{
+		switch (event.type) {
 			case SDL_QUIT:
 				shouldClose = true;
 				break;
+
+            case SDL_KEYDOWN:
+                handle_key_event(event.key, true);
+                break;
+
+            case SDL_KEYUP:
+                handle_key_event(event.key, false);
+                break;
+
 
 			default:
 				break;
 		}
 	}
+}
+
+
+void handle_key_event(SDL_KeyboardEvent event, bool press) {
+    switch (event.keysym.sym) {
+        case SDLK_w:
+            keys.w_key = press;
+            break;
+        case SDLK_a:
+            keys.a_key = press;
+            break;
+        case SDLK_s:
+            keys.s_key = press;
+            break;
+        case SDLK_d:
+            keys.d_key = press;
+            break;
+        
+        default:
+            break;
+    }
+}
+
+
+void handle_movement(void) {
+    if (keys.w_key) {
+        player.y -= player.speed;
+    }
+    if (keys.s_key) {
+        player.y += player.speed;
+    }
+    if (keys.a_key) {
+        player.x -= player.speed;
+    }
+    if (keys.d_key) {
+        player.x += player.speed;
+    }
 }
 
 
