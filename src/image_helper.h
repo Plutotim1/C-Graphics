@@ -11,5 +11,7 @@ typedef struct App {
     SDL_Surface *surface;
 } App;
 
-SDL_Texture *load_texture(SDL_Renderer *renderer, char *filename);
-void apply_texture_surface(App app, SDL_Surface *texture, int x, int y);
+SDL_Surface *load_texture_surface(const char *filename);
+SDL_Texture *load_texture(SDL_Renderer *renderer, const char *filename);
+void render_texture_surface(App app, SDL_Surface *texture, int x, int y);
+void render_texture(App app, SDL_Texture *texture, SDL_Rect *pos);

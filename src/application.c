@@ -1,11 +1,23 @@
-
-
 #include "defs.h"
 #include "colors.h"
 #include "image_helper.h"
 
 
+typedef struct Player {
+    int health;
+    int ammo;
+    int speed;
+    //what fraction of the Screen the player should take up
+    int size_x;
+    //the same
+    int size_y;
+    int x;
+    int y;
+} Player;
+
+
 void do_input(void);
+void init_player(void);
 void render(App app);
 void reset_screen(App app, Color color);
 void set_draw_color(App app, Color color, int opacity);
@@ -13,9 +25,11 @@ void set_draw_color(App app, Color color, int opacity);
 
 bool shouldClose;
 int pos;
+Player player;
 
 
 int main(void) {
+    printf("foo\n");
     //clock_t start, end;
     shouldClose = false;
 
@@ -30,13 +44,21 @@ int main(void) {
     struct App app;
     app.window = SDL_CreateWindow("test", 0, 0, SCREEN_WIDTH, SCREEN_HEIGTH, 0);
     app.renderer = SDL_CreateRenderer(app.window, -1, SDL_RENDERER_ACCELERATED);
+    app.surface = SDL_GetWindowSurface(app.window);
 
     pos = 0;
     //start = clock();
+    SDL_UnlockSurface(app.surface);
+
+    printf("bar\n");
+
+    //initialize the player with default values
+    init_player();
+
     while(!shouldClose) {
         do_input();
         render(app);
-        SDL_Delay(16);
+        SDL_Delay(8);
     }
     //end = clock();
     //printf("frames per second: %f", (double) 1 / ((double) ((end - start) / pos) / CLOCKS_PER_SEC));
@@ -66,18 +88,30 @@ void do_input(void)
 }
 
 
+void init_player(void) {
+    Player p = {BASE_HP, BASE_AMMO, BASE_SPEED, SCREEN_WIDTH / BASE_PLAYER_SIZE_X, SCREEN_HEIGTH / BASE_PLAYER_SIZE_Y, SCREEN_WIDTH / 2, SCREEN_HEIGTH / 2};
+    p.x -= p.size_x / 2;
+    p.y -= p.size_y / 2;
+    player = p;
+}
+
+
 void render(App app) {
-    reset_screen(app, WHITE);
-    //test
-    SDL_Surface *text = load_texture_surface(PLAYER_TEXTURE);
-    apply_texture_surface(app, text, pos, SCREEN_HEIGTH / 2);
-    pos++;
+    reset_screen(app, BLACK);
+    SDL_Texture *text = load_texture(app.renderer,PLAYER_TEXTURE);
+    if (text == NULL) {
+        printf("%s\n", PLAYER_TEXTURE);
+        exit(1);
+    }
+    SDL_Rect pos = {player.x, player.y, player.size_x, player.size_y};
+    render_texture(app, text, &pos);
     SDL_RenderPresent(app.renderer);
 }
 
 
 void reset_screen(App app, Color color) {
-    SDL_RenderDrawRect(app.renderer, NULL);
+    set_draw_color(app, color, 255);
+    SDL_RenderFillRect(app.renderer, NULL);
 }
 
 
