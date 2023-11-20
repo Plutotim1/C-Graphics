@@ -196,7 +196,7 @@ void handle_movement(void) {
     }
 
     /*
-    //move projectiles depending on their speed
+    //move projectiles depending on their speed (1 pixel per speed)
     if (proj != NULL) {
         proj->pos.y -= proj->speed;
         if(proj->pos.y < 0) {
@@ -277,13 +277,18 @@ void render(App app) {
 
     //render projectiles
     Projectile_List *pl = projectiles.first;
+    SDL_Texture *proj_text = load_texture(app.renderer, PROJECTILE_TEXTURE);
+    if (proj_text == NULL) {
+        printf("couldn't find projectile texture at the following location: %s\n", PROJECTILE_TEXTURE);
+        quit_programm(1);
+    }
 
-    //render first projectile
-    render_projectile(pl->projectile, app);
+    while(pl != NULL) {
+        //render_projectile(pl->projectile, app);
+        //render projectile
+        render_texture(app, proj_text, &(pl->projectile->pos));
 
-    while(pl->next != NULL) {
         pl = pl->next;
-        render_projectile(pl->projectile, app);
     }
 
     SDL_RenderPresent(app.renderer);
