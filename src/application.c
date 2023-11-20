@@ -18,6 +18,18 @@ typedef struct Projectile {
 } Projectile;
 
 
+typedef struct Projectile_List {
+    Projectile *projectile;
+    struct Projectile_List *next;
+} Projectile_List;
+
+
+typedef struct List_Start {
+    Projectile_List *first;
+    int length;
+}   List_Start;
+
+
 //checks wether a key is currently held down
 typedef struct Keys {
     bool a_key;
@@ -27,20 +39,22 @@ typedef struct Keys {
 } Keys;
 
 
+void exit(int code);
 void check_input(void);
 void handle_key_event(SDL_KeyboardEvent event, bool press);
 void handle_movement(void);
 void init_player(void);
 void render(App app);
+void render_projectile(Projectile *projectile, App app);
 void reset_screen(App app, Color color);
 void set_draw_color(App app, Color color, int opacity);
-Projectile *init_projectile();
+void create_projectile();
 
 
 bool shouldClose;
 Player player;
 Keys keys;
-Projectile *proj;
+struct List_Start projectiles;
 
 
 int main(void) {
@@ -75,7 +89,8 @@ int main(void) {
     init_player();
 
     //initialize projectile as none
-    proj = NULL;
+    projectiles.length = 0;
+    projectiles.first = NULL;
 
     while(!shouldClose) {
         check_input();
@@ -90,6 +105,11 @@ int main(void) {
     SDL_DestroyRenderer(app.renderer);
     SDL_DestroyWindow(app.window);
     SDL_Quit();
+}
+
+
+void quit_programm(int code) {
+    exit(code);
 }
 
 
@@ -137,7 +157,7 @@ void handle_key_event(SDL_KeyboardEvent event, bool press) {
         
         case SDLK_SPACE:
             if (event.repeat == 0 && press == true) {
-                proj = init_projectile();
+                create_projectile();
             }
             break;
         
@@ -175,7 +195,8 @@ void handle_movement(void) {
         player.pos.y = SCREEN_HEIGTH - player.pos.h;
     }
 
-    //make projectiles move
+    /*
+    //move projectiles depending on their speed
     if (proj != NULL) {
         proj->pos.y -= proj->speed;
         if(proj->pos.y < 0) {
@@ -183,6 +204,7 @@ void handle_movement(void) {
             proj = NULL;
         }
     }
+    */
 }
 
 
@@ -195,19 +217,16 @@ void init_player(void) {
 }
 
 
-Projectile *init_projectile() {
-    //check if one already exists
-    if (proj != NULL) {
-        free(proj);
-    }
-
+void create_projectile() {
     //malloc memory
-    Projectile *proj_ptr = malloc(sizeof(Projectile));
+    Projectile_List *pl = malloc(sizeof(Projectile_List));
+    Projectile *p = malloc(sizeof(Projectile));
+
 
     //check for errors
-    if (proj_ptr == NULL) {
+    if (pl == NULL || p == NULL) {
         printf("ERROR: couldn't allocate memory for a projectile");
-        exit(1);
+        quit_programm(1);
     }
 
     //calculate size
@@ -219,14 +238,21 @@ Projectile *init_projectile() {
     int y = player.pos.y + player.pos.h / 2 - s / 2;
     
     //initialize position rectangle values
-    SDL_Rect p = {x, y, s, s};
+    SDL_Rect pos = {x, y, s, s};
 
     //initialize projectile values
-    proj_ptr->damage = BASE_PROJECTILE_DAMAGE;
-    proj_ptr->speed = BASE_PROJECTILE_SPEED;
-    proj_ptr->pos = p;
+    p->damage = BASE_PROJECTILE_DAMAGE;
+    p->speed = BASE_PROJECTILE_SPEED;
+    p->pos = pos;
 
-    return proj_ptr;
+    //assign projectile
+    pl->projectile = p;
+
+    //initialize projectile list
+    pl->next = projectiles.first;
+    projectiles.first = pl;
+
+    projectiles.length++;
 }
 
 
@@ -237,29 +263,46 @@ void render(App app) {
     SDL_Texture *text = load_texture(app.renderer, PLAYER_TEXTURE);
     if (text == NULL) {
         printf("couldn'*t find player texture at the following location: %s\n", PLAYER_TEXTURE);
-        exit(1);
+        quit_programm(1);
     }
 
     //render player
     render_texture(app, text, &(player.pos));
 
     //check if there is a projectile
-    if (proj == NULL) {
+    if (projectiles.first == NULL) {
         SDL_RenderPresent(app.renderer);
         return;
     }
 
-    //render  said projectile
+    //render projectiles
+    Projectile_List *pl = projectiles.first;
+
+    //render first projectile
+    render_projectile(pl->projectile, app);
+
+    while(pl->next != NULL) {
+        pl = pl->next;
+        render_projectile(pl->projectile, app);
+    }
+
+    SDL_RenderPresent(app.renderer);
+}
+
+
+void render_projectile(Projectile *projectile, App app) {
+    //get texture
     SDL_Texture *proj_text = load_texture(app.renderer, PROJECTILE_TEXTURE);
+
+    //check for error
     if (proj_text == NULL) {
         printf("couldn't find projectile texture at the following location: %s\n", PROJECTILE_TEXTURE);
-        exit(1);
+        quit_programm(1);
     }
 
     //render projectile
-    render_texture(app, proj_text, &(proj->pos));
-
-    SDL_RenderPresent(app.renderer);
+    render_texture(app, proj_text, &(projectile->pos));
+    free(proj_text);
 }
 
 

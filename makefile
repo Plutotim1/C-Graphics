@@ -6,4 +6,4 @@ VPATH = src
 
 
 application : application.c colors.c image_helper.c defs.h
-	$(CC) src/application.c src/colors.c src/image_helper.c src/defs.h `pkg-config sdl2 SDL2_image --cflags` `pkg-config sdl2 SDL2_image --libs` -o application
+	$(CC) src/application.c src/colors.c src/image_helper.c src/defs.h `pkg-config sdl2 SDL2_image --cflags` `pkg-config sdl2 SDL2_image --libs` -g -o application
