@@ -20,6 +20,7 @@ typedef struct Projectile {
 
 typedef struct Projectile_List {
     Projectile *projectile;
+    struct Projectile_List *previous;
     struct Projectile_List *next;
 } Projectile_List;
 
@@ -195,16 +196,45 @@ void handle_movement(void) {
         player.pos.y = SCREEN_HEIGTH - player.pos.h;
     }
 
-    /*
     //move projectiles depending on their speed (1 pixel per speed)
-    if (proj != NULL) {
-        proj->pos.y -= proj->speed;
-        if(proj->pos.y < 0) {
-            free(proj);
-            proj = NULL;
+    Projectile_List *pl = projectiles.first;
+
+    //pointer used to be able to free list items
+    Projectile_List *free_pointer;
+
+    //iterate over projectiles
+    while(pl != NULL) {
+        //move projectile
+        pl->projectile->pos.y -= pl->projectile->speed;
+
+        //check wether the projectile is out of bounds
+        if (pl->projectile->pos.y > SCREEN_HEIGTH || pl->projectile->pos.y < 0) {
+
+            //remove the projectile from the list
+
+            //if it has a previous and next, connect those together
+            if (pl->previous != NULL && pl->next != NULL) {
+                pl->previous->next = pl->next;
+                pl->next->previous = pl->previous;
+            }
+            if (pl->next != NULL && pl->previous ==NULL){
+                pl->next->previous = NULL;
+                projectiles.first = pl->next;
+            }
+            if (pl->next == NULL && pl->previous == NULL) {
+                projectiles.first = NULL;
+            }
+            if (pl->next == NULL && pl->previous != NULL) {
+                pl->previous->next = NULL;
+            }
+            //free_pointer = pl;
+            pl = pl->next;
+            //free(free_pointer);
+        }
+        else {
+            pl = pl->next;
         }
     }
-    */
 }
 
 
@@ -249,7 +279,11 @@ void create_projectile() {
     pl->projectile = p;
 
     //initialize projectile list
+    pl->previous = NULL;
     pl->next = projectiles.first;
+    if (pl ->next != NULL) {
+        pl->next->previous = pl;
+    }
     projectiles.first = pl;
 
     projectiles.length++;
@@ -276,15 +310,17 @@ void render(App app) {
     }
 
     //render projectiles
+
     Projectile_List *pl = projectiles.first;
+    //load texture
     SDL_Texture *proj_text = load_texture(app.renderer, PROJECTILE_TEXTURE);
+    //check for error
     if (proj_text == NULL) {
         printf("couldn't find projectile texture at the following location: %s\n", PROJECTILE_TEXTURE);
         quit_programm(1);
     }
-
+    //iterate over projectiles
     while(pl != NULL) {
-        //render_projectile(pl->projectile, app);
         //render projectile
         render_texture(app, proj_text, &(pl->projectile->pos));
 
@@ -292,22 +328,6 @@ void render(App app) {
     }
 
     SDL_RenderPresent(app.renderer);
-}
-
-
-void render_projectile(Projectile *projectile, App app) {
-    //get texture
-    SDL_Texture *proj_text = load_texture(app.renderer, PROJECTILE_TEXTURE);
-
-    //check for error
-    if (proj_text == NULL) {
-        printf("couldn't find projectile texture at the following location: %s\n", PROJECTILE_TEXTURE);
-        quit_programm(1);
-    }
-
-    //render projectile
-    render_texture(app, proj_text, &(projectile->pos));
-    free(proj_text);
 }
 
 
